@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>QRMS — กำลังเชื่อมต่อ...</title>
+  <title>QRMS — Quality Review & Monitoring System</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #e2e8f0; }
@@ -16,10 +16,14 @@
     .status { font-size: 14px; color: #94a3b8; min-height: 20px; }
     .status.error { color: #f87171; }
     .status.success { color: #34d399; }
+    .go-btn { display: none; margin: 16px auto 0; padding: 12px 32px; background: #6366f1; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; text-decoration: none; }
+    .go-btn:hover { background: #4f46e5; }
+    .countdown { display: none; margin-top: 8px; font-size: 12px; color: #64748b; }
     .retry-btn { display: none; margin-top: 16px; padding: 10px 24px; background: #6366f1; color: white; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; }
     .retry-btn:hover { background: #4f46e5; }
     .internal-link { display: block; margin-top: 20px; color: #94a3b8; font-size: 12px; }
     .internal-link a { color: #6366f1; text-decoration: underline; }
+    .bookmark-hint { display: none; margin-top: 12px; font-size: 11px; color: #64748b; }
   </style>
 </head>
 <body>
@@ -29,23 +33,43 @@
     <p class="subtitle">Quality Review & Monitoring System</p>
     <div class="spinner" id="spinner"></div>
     <div class="status" id="status">กำลังค้นหา URL ล่าสุด...</div>
+    <a class="go-btn" id="goBtn" href="#" target="_self">🚀 เข้าสู่ระบบ</a>
+    <div class="countdown" id="countdown"></div>
+    <div class="bookmark-hint" id="bookmarkHint">💡 Bookmark หน้านี้ได้เลย — ลิงก์นี้ใช้ได้ตลอด</div>
     <button class="retry-btn" id="retryBtn" onclick="fetchAndRedirect()">🔄 ลองใหม่</button>
     <div class="internal-link">เครือข่ายภายใน: <a href="https://qrms.icc.co.th">qrms.icc.co.th</a></div>
   </div>
   <script>
     const RAW_URL = 'https://gist.githubusercontent.com/nutthaponbun-star/bac47fe41cb2cc71ecdd2dec6e2d98ed/raw/qrms-tunnel-url.json';
-    const statusEl = document.getElementById('status'), spinnerEl = document.getElementById('spinner'), retryBtn = document.getElementById('retryBtn');
+    const statusEl = document.getElementById('status'), spinnerEl = document.getElementById('spinner');
+    const retryBtn = document.getElementById('retryBtn'), goBtn = document.getElementById('goBtn');
+    const countdownEl = document.getElementById('countdown'), bookmarkHint = document.getElementById('bookmarkHint');
+    let timer = null;
     async function fetchAndRedirect() {
-      retryBtn.style.display = 'none'; spinnerEl.style.display = 'block';
+      retryBtn.style.display = 'none'; goBtn.style.display = 'none';
+      countdownEl.style.display = 'none'; bookmarkHint.style.display = 'none';
+      spinnerEl.style.display = 'block';
       statusEl.className = 'status'; statusEl.textContent = 'กำลังค้นหา URL ล่าสุด...';
+      if (timer) { clearInterval(timer); timer = null; }
       try {
         const res = await fetch(RAW_URL + '?t=' + Date.now(), { cache: 'no-store' });
         if (!res.ok) throw new Error('Gist response: ' + res.status);
         const data = await res.json();
         if (!data.url) throw new Error('URL ว่าง');
+        spinnerEl.style.display = 'none';
         statusEl.className = 'status success';
-        statusEl.textContent = '✅ พบแล้ว! กำลังเปลี่ยนเส้นทาง...';
-        setTimeout(() => { window.location.href = data.url; }, 500);
+        statusEl.textContent = '✅ พบแล้ว!';
+        goBtn.href = data.url;
+        goBtn.style.display = 'inline-block';
+        bookmarkHint.style.display = 'block';
+        let sec = 5;
+        countdownEl.style.display = 'block';
+        countdownEl.textContent = 'เปลี่ยนเส้นทางอัตโนมัติใน ' + sec + ' วินาที...';
+        timer = setInterval(() => {
+          sec--;
+          if (sec <= 0) { clearInterval(timer); window.location.href = data.url; }
+          else { countdownEl.textContent = 'เปลี่ยนเส้นทางอัตโนมัติใน ' + sec + ' วินาที...'; }
+        }, 1000);
       } catch (err) {
         spinnerEl.style.display = 'none'; statusEl.className = 'status error';
         statusEl.textContent = '❌ ไม่สามารถค้นหา URL ได้ — ' + err.message;
