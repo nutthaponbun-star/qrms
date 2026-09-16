@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QRMS — กำลังเชื่อมต่อ...</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #e2e8f0; }
+    .card { text-align: center; padding: 48px 40px; background: rgba(30,41,59,0.8); border: 1px solid rgba(99,102,241,0.3); border-radius: 16px; backdrop-filter: blur(12px); max-width: 420px; width: 90%; }
+    .logo { font-size: 48px; margin-bottom: 16px; }
+    h1 { font-size: 22px; font-weight: 600; margin-bottom: 8px; color: #a5b4fc; }
+    .subtitle { color: #94a3b8; font-size: 14px; margin-bottom: 32px; }
+    .spinner { width: 40px; height: 40px; border: 3px solid rgba(99,102,241,0.2); border-top-color: #6366f1; border-radius: 50%; animation: spin .8s linear infinite; margin: 0 auto 20px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .status { font-size: 14px; color: #94a3b8; min-height: 20px; }
+    .status.error { color: #f87171; }
+    .status.success { color: #34d399; }
+    .retry-btn { display: none; margin-top: 16px; padding: 10px 24px; background: #6366f1; color: white; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; }
+    .retry-btn:hover { background: #4f46e5; }
+    .internal-link { display: block; margin-top: 20px; color: #94a3b8; font-size: 12px; }
+    .internal-link a { color: #6366f1; text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">🖥️</div>
+    <h1>QRMS</h1>
+    <p class="subtitle">Quality Review & Monitoring System</p>
+    <div class="spinner" id="spinner"></div>
+    <div class="status" id="status">กำลังค้นหา URL ล่าสุด...</div>
+    <button class="retry-btn" id="retryBtn" onclick="fetchAndRedirect()">🔄 ลองใหม่</button>
+    <div class="internal-link">เครือข่ายภายใน: <a href="https://qrms.icc.co.th">qrms.icc.co.th</a></div>
+  </div>
+  <script>
+    const RAW_URL = 'https://gist.githubusercontent.com/nutthaponbun-star/bac47fe41cb2cc71ecdd2dec6e2d98ed/raw/qrms-tunnel-url.json';
+    const statusEl = document.getElementById('status'), spinnerEl = document.getElementById('spinner'), retryBtn = document.getElementById('retryBtn');
+    async function fetchAndRedirect() {
+      retryBtn.style.display = 'none'; spinnerEl.style.display = 'block';
+      statusEl.className = 'status'; statusEl.textContent = 'กำลังค้นหา URL ล่าสุด...';
+      try {
+        const res = await fetch(RAW_URL + '?t=' + Date.now(), { cache: 'no-store' });
+        if (!res.ok) throw new Error('Gist response: ' + res.status);
+        const data = await res.json();
+        if (!data.url) throw new Error('URL ว่าง');
+        statusEl.className = 'status success';
+        statusEl.textContent = '✅ พบแล้ว! กำลังเปลี่ยนเส้นทาง...';
+        setTimeout(() => { window.location.href = data.url; }, 500);
+      } catch (err) {
+        spinnerEl.style.display = 'none'; statusEl.className = 'status error';
+        statusEl.textContent = '❌ ไม่สามารถค้นหา URL ได้ — ' + err.message;
+        retryBtn.style.display = 'inline-block';
+      }
+    }
+    fetchAndRedirect();
+  </script>
+</body>
+</html>
